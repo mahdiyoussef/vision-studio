@@ -1,15 +1,30 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-//, { useState, useEffect } from 'react';
 import { Settings2, Cpu, HardDrive, Download, Upload, Server, Shield, Activity, RefreshCw, Database } from 'lucide-react';
+import { api } from '../services/api';
 
 export default function Settings() {
   const [kaggleUsername, setKaggleUsername] = useState('');
   const [kaggleKey, setKaggleKey] = useState('');
+  const [telemetry, setTelemetry] = useState<any>(null);
+  const [loadingTelemetry, setLoadingTelemetry] = useState(false);
+
+  const fetchTelemetry = async () => {
+    setLoadingTelemetry(true);
+    try {
+      const data = await api.system.telemetry();
+      setTelemetry(data);
+    } catch (err) {
+      toast.error('Failed to fetch telemetry');
+    } finally {
+      setLoadingTelemetry(false);
+    }
+  };
 
   useEffect(() => {
     setKaggleUsername(localStorage.getItem('kaggleUsername') || '');
     setKaggleKey(localStorage.getItem('kaggleKey') || '');
+    fetchTelemetry();
   }, []);
 
   const handleSaveKaggle = () => {
@@ -43,40 +58,40 @@ export default function Settings() {
                <div className="space-y-2 p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
                  <div className="flex justify-between text-xs">
                    <span className="text-slate-600 font-medium flex items-center"><Cpu size={14} className="mr-1 text-slate-400" /> CPU Load</span>
-                   <span className="font-bold text-slate-900 font-mono">42%</span>
+                   <span className="font-bold text-slate-900 font-mono">{telemetry ? telemetry.cpu.load_percent : '...'}%</span>
                  </div>
                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-blue-600 h-full rounded-full" style={{ width: '42%' }}></div>
+                   <div className="bg-blue-600 h-full rounded-full" style={{ width: `${telemetry ? telemetry.cpu.load_percent : 0}%` }}></div>
                  </div>
-                 <p className="text-[10px] text-slate-400 font-medium">Intel Core i7-12700TE</p>
+                 <p className="text-[10px] text-slate-400 font-medium truncate" title={telemetry?.cpu.model || 'Loading'}>{telemetry ? telemetry.cpu.model : 'Loading...'}</p>
                </div>
                
                <div className="space-y-2 p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
                  <div className="flex justify-between text-xs">
                    <span className="text-slate-600 font-medium flex items-center"><Server size={14} className="mr-1 text-slate-400" /> GPU VRAM</span>
-                   <span className="font-bold text-slate-900 font-mono">8.2 / 16 GB</span>
+                   <span className="font-bold text-slate-900 font-mono">{telemetry ? `${telemetry.vram.used_gb} / ${telemetry.vram.total_gb} GB` : '...'}</span>
                  </div>
                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-indigo-500 h-full rounded-full" style={{ width: '51%' }}></div>
+                   <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${telemetry ? telemetry.vram.percent : 0}%` }}></div>
                  </div>
-                 <p className="text-[10px] text-slate-400 font-medium">NVIDIA RTX A4000</p>
+                 <p className="text-[10px] text-slate-400 font-medium truncate" title={telemetry?.vram.model || 'Loading'}>{telemetry ? telemetry.vram.model : 'Loading...'}</p>
                </div>
                
                <div className="space-y-2 p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
                  <div className="flex justify-between text-xs">
                    <span className="text-slate-600 font-medium flex items-center"><HardDrive size={14} className="mr-1 text-slate-400" /> Disk Storage</span>
-                   <span className="font-bold text-slate-900 font-mono">210 GB Free</span>
+                   <span className="font-bold text-slate-900 font-mono">{telemetry ? `${telemetry.disk.free_gb} GB Free` : '...'}</span>
                  </div>
                  <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                   <div className="bg-emerald-500 h-full rounded-full" style={{ width: '30%' }}></div>
+                   <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${telemetry ? telemetry.disk.percent : 0}%` }}></div>
                  </div>
                  <p className="text-[10px] text-slate-400 font-medium">NVMe SSD (Images/Logs)</p>
                </div>
              </div>
              
              <div className="mt-6 pt-5 border-t border-slate-100 flex justify-end space-x-3">
-               <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition flex items-center shadow-xs">
-                 <RefreshCw size={13} className="mr-1.5" /> Refresh
+               <button onClick={fetchTelemetry} disabled={loadingTelemetry} className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition flex items-center shadow-xs disabled:opacity-50">
+                 <RefreshCw size={13} className={`mr-1.5 ${loadingTelemetry ? 'animate-spin' : ''}`} /> Refresh
                </button>
                <button className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold border border-rose-200 transition">
                  Restart Services
