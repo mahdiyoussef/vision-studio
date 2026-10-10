@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # The VisionStudio API Server
+  vision-studio-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: visionstudio-edge:latest
+    container_name: vs-api-edge
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/vision_studio
+      - JWT_SECRET=edge-deployment-local-secret
+    volumes:
+      - ./edge_cache/models:/tmp/models
+      - ./plugins:/app/plugins
+      - ./src:/app/src
+    depends_on:
+      - mongo
+
+  # The VisionStudio React Frontend
+  vision-studio-ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: visionstudio-ui:latest
+    container_name: vs-ui-edge
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - vision-studio-api
+
+  # Local Persistence
+  mongo:
+    image: mongo:6.0
+    container_name: vs-mongo-edge
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # Cloud Sync Agent
+  cloud-sync-agent:
+    image: python:3.11-slim
+    container_name: vs-sync-agent
+    restart: unless-stopped
+    command: >
+      bash -c "while true; do echo 'Syncing local measurements to Azure...'; sleep 60; done"
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
