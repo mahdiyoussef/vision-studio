@@ -23,7 +23,7 @@ class KaggleAdapter(DatasetProviderInterface):
             logger.info(f"Downloading Kaggle dataset {identifier} to {dest_path}")
             os.makedirs(dest_path, exist_ok=True)
             
-            kaggle.api.dataset_download_files(identifier, path=dest_path, unzip=False)
+            kaggle.api.dataset_download_files(identifier, path=dest_path, force=True, quiet=False, unzip=False)
             
             # Find the downloaded zip and extract manually to avoid Kaggle API size mismatch bug
             for item in os.listdir(dest_path):
