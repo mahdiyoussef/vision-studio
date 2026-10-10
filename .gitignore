@@ -1,0 +1,92 @@
+# ==============================================================================
+# VisionStudio / Computer Vision Metrology
+# ==============================================================================
+
+# ---- Python & Backend ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.tox/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Virtual Environment ----
+venv/
+.venv/
+env/
+venv*/
+
+# ---- Node.js & Frontend ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/dist/
+frontend/dist-ssr/
+.env
+.env.*.local
+.env.local
+
+# ---- Agent / IDE artifacts ----
+.gemini/
+.agent/
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Model Weights & Datasets ----
+weights/
+*.pt
+*.pth
+*.onnx
+data/
+edge_cache/
+outputs/
+augmented_data/
+yolo_dataset/
+data.zip
+
+# ---- Terraform ----
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# ---- Logs & Results ----
+*.log
+runs/
+benchmark/results/
+benchmark/runs/
+benchmark/*.log
+
+# ---- Vendor SDKs & Other ----
+sdkmindvision/
+Camera/
+rtdetr-x/
