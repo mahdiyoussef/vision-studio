@@ -12,17 +12,17 @@ def get_analytics():
     # Use project_id as seed for deterministic mock data
     random.seed(project_id)
     
-    total_inspected = random.randint(5000, 20000)
-    total_defects = random.randint(100, 600)
-    overall_yield = round(100.0 - (total_defects / total_inspected * 100), 1)
+    total_inferences = random.randint(50000, 200000)
+    low_confidence_count = random.randint(500, 2000)
+    avg_confidence = round(random.uniform(88.0, 96.0), 1)
     
-    daily_yields = [random.randint(94, 99) for _ in range(7)]
+    daily_inferences = [random.randint(5000, 25000) for _ in range(7)]
     
-    pareto = [
-        {"name": "Scratch on Surface", "count": random.randint(100, 200), "percent": 45, "color": "bg-red-500"},
-        {"name": "Out of Tolerance (Width)", "count": random.randint(80, 150), "percent": 26, "color": "bg-orange-500"},
-        {"name": "Missing Component", "count": random.randint(50, 100), "percent": 18, "color": "bg-yellow-500"},
-        {"name": "Color/Oxidation", "count": random.randint(10, 50), "percent": 11, "color": "bg-blue-400"}
+    class_distribution = [
+        {"name": "Person", "count": random.randint(10000, 20000), "percent": 45, "color": "bg-emerald-500"},
+        {"name": "Car", "count": random.randint(5000, 12000), "percent": 26, "color": "bg-blue-500"},
+        {"name": "Bicycle", "count": random.randint(2000, 8000), "percent": 18, "color": "bg-indigo-500"},
+        {"name": "Motorcycle", "count": random.randint(500, 3000), "percent": 11, "color": "bg-purple-500"}
     ]
     
     # reset seed
@@ -30,11 +30,11 @@ def get_analytics():
     
     return jsonify({
         "kpi": {
-            "total_inspected": total_inspected,
-            "overall_yield": overall_yield,
-            "total_defects": total_defects,
-            "false_rejects": 1.4
+            "total_inferences": total_inferences,
+            "avg_confidence": avg_confidence,
+            "low_confidence_count": low_confidence_count,
+            "active_learning_synced": round(low_confidence_count * 0.8) # 80% of low conf pushed to edge
         },
-        "daily_yields": daily_yields,
-        "pareto": pareto
+        "daily_inferences": daily_inferences,
+        "class_distribution": class_distribution
     })

@@ -14,8 +14,20 @@ vi.mock('../services/api', () => ({
   }
 }));
 
+const { mockToast } = vi.hoisted(() => {
+  const fn = vi.fn();
+  Object.assign(fn, {
+    success: vi.fn(),
+    error: vi.fn(),
+    loading: vi.fn(),
+    dismiss: vi.fn(),
+  });
+  return { mockToast: fn };
+});
+
 vi.mock('react-hot-toast', () => ({
-  default: vi.fn(),
+  default: mockToast,
+  toast: mockToast,
 }));
 
 import { ProjectContext } from '../context/ProjectContext';
@@ -23,7 +35,8 @@ import { ProjectContext } from '../context/ProjectContext';
 const mockContextValue = {
   activeProjectId: 'test-proj',
   setActiveProjectId: vi.fn(),
-  projects: []
+  projects: [],
+  refreshProjects: vi.fn()
 };
 
 const renderWithContext = (ui: React.ReactElement) => {

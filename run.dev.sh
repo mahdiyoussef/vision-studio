@@ -20,11 +20,11 @@ fi
 
 export PYTHONPATH=$(pwd)/src
 export FLASK_APP=src/vision_studio/presentation/api/app.py
-export FLASK_ENV=development
+export FLASK_DEBUG=1
 export MONGO_URI=mongodb://localhost:27017/vision_studio
 export JWT_SECRET=edge-deployment-local-secret
 
-flask run --host=0.0.0.0 --port=5001 > flask.log 2>&1 &
+flask run --debug --host=0.0.0.0 --port=5001 > flask.log 2>&1 &
 BACKEND_PID=$!
 
 echo "-> Starting React Frontend..."

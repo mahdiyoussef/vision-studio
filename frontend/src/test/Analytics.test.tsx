@@ -23,18 +23,18 @@ describe('Analytics Page', () => {
     expect(screen.getByText('Loading analytics...')).toBeInTheDocument();
   });
 
-  it('renders KPI metrics and Pareto charts when loaded', async () => {
+  it('renders universal CV metrics and class distribution when loaded', async () => {
     const mockData = {
       kpi: {
-        total_inspected: 14850,
-        overall_yield: 98.4,
-        total_defects: 238,
-        false_rejects: 1.2
+        total_inferences: 177398,
+        avg_confidence: 92.3,
+        low_confidence_count: 1898,
+        active_learning_synced: 1518
       },
-      daily_yields: [96, 97, 98, 99],
-      pareto: [
-        { name: 'Scratch Defect', count: 120, percent: 50.4, color: 'bg-rose-500' },
-        { name: 'Dimension Out of Bounds', count: 85, percent: 35.7, color: 'bg-amber-500' }
+      daily_inferences: [5000, 10000, 15000, 20000],
+      class_distribution: [
+        { name: 'Person', count: 18191, percent: 45, color: 'bg-emerald-500' },
+        { name: 'Vehicle', count: 6395, percent: 26, color: 'bg-blue-500' }
       ]
     };
 
@@ -42,16 +42,40 @@ describe('Analytics Page', () => {
     render(<Analytics />);
 
     await waitFor(() => {
-      expect(screen.getByText('Yield & Defect Analytics')).toBeInTheDocument();
-      expect(screen.getByText('14,850')).toBeInTheDocument();
-      expect(screen.getByText('98.4%')).toBeInTheDocument();
-      expect(screen.getByText('238')).toBeInTheDocument();
-      expect(screen.getByText('1.2%')).toBeInTheDocument();
+      expect(screen.getByText('Vision Analytics')).toBeInTheDocument();
+      expect(screen.getByText('177,398')).toBeInTheDocument();
+      expect(screen.getByText('92.3%')).toBeInTheDocument();
+      expect(screen.getByText('1,898')).toBeInTheDocument();
+      expect(screen.getByText('1,518')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Scratch Defect')).toBeInTheDocument();
-    expect(screen.getByText('120 (50.4%)')).toBeInTheDocument();
-    expect(screen.getByText('Dimension Out of Bounds')).toBeInTheDocument();
+    expect(screen.getByText('Person')).toBeInTheDocument();
+    expect(screen.getByText('18,191 (45%)')).toBeInTheDocument();
+    expect(screen.getByText('Vehicle')).toBeInTheDocument();
+  });
+
+  it('handles legacy format gracefully without crashing', async () => {
+    const legacyMockData = {
+      kpi: {
+        total_inspected: 12000,
+        overall_yield: 95.5,
+        total_defects: 120,
+        false_rejects: 50
+      },
+      daily_yields: [95, 96, 97],
+      pareto: [
+        { name: 'Legacy Anomaly', count: 120, percent: 100, color: 'bg-red-500' }
+      ]
+    };
+
+    (api.analytics.get as any).mockResolvedValueOnce(legacyMockData);
+    render(<Analytics />);
+
+    await waitFor(() => {
+      expect(screen.getByText('12,000')).toBeInTheDocument();
+      expect(screen.getByText('95.5%')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Legacy Anomaly')).toBeInTheDocument();
   });
 });
-

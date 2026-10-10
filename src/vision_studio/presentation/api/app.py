@@ -50,6 +50,7 @@ def create_app(config_object=None) -> Flask:
     from vision_studio.presentation.api.routes.auth_routes import auth_bp
     from vision_studio.presentation.api.routes.mlops import mlops_bp
     from vision_studio.presentation.api.routes.analytics import analytics_bp
+    from vision_studio.presentation.api.routes.system import system_bp
     from vision_studio.presentation.api.controllers.dataset_controller import dataset_bp
 
     app.register_blueprint(inference_bp, url_prefix="/api/v1/inference")
@@ -58,6 +59,7 @@ def create_app(config_object=None) -> Flask:
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(mlops_bp, url_prefix="/api/v1/mlops")
     app.register_blueprint(analytics_bp, url_prefix="/api/v1/analytics")
+    app.register_blueprint(system_bp, url_prefix="/api/v1/system")
     app.register_blueprint(dataset_bp)
     
     # Start WebRTC Background thread
