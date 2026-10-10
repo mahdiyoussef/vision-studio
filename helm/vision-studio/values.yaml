@@ -1,0 +1,14 @@
+replicaCount: 2
+
+image:
+  repository: acrvisionstudiodev.azurecr.io/vision-studio-api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 5000
+
+env:
+  MONGO_URI: "mongodb://localhost:27017"

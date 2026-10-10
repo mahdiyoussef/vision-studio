@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vision-studio-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vision-studio-api
+  template:
+    metadata:
+      labels:
+        app: vision-studio-api
+    spec:
+      containers:
+      - name: api
+        image: IMAGE_PLACEHOLDER
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: vision-studio-secrets
+              key: MONGO_URI
