@@ -1,26 +1,26 @@
-# VisionStudio
+# Vision Studio
 
-VisionStudio is an enterprise-grade, multi-purpose Computer Vision Metrology platform. It is designed to run quality-assurance inspections on arbitrary industrial components (Stators, Chignons, Cables, etc.) using decoupled Domain-Driven Design (DDD).
+Vision Studio is a platform designed to make Computer Vision **easy, accessible, and highly configurable**. Whether you are building smart applications, running visual intelligence tasks, or exploring AI, Vision Studio democratizes ML model deployment by abstracting the complexities of inference, hardware, and MLOps.
 
-Unlike legacy hardcoded scripts, VisionStudio is a completely generic platform that can connect to any camera and execute any ML model. It is **100% configurable via a modern Web UI**.
-
-## Architecture
-
-The project strictly follows **Domain-Driven Design (DDD)** and Clean Architecture.
-
-- **`src/vision_studio/domain/`**: The pure-Python core. Contains Entities (`Project`, `Detection`, `Measurement`), Value Objects (`ToleranceBand`), and Abstract Ports (`ICameraAdapter`, `IModelAdapter`). It has **zero dependencies** on infrastructure, ML frameworks, or APIs.
-- **`src/vision_studio/application/`**: Orchestrates the flow. Contains Use Cases (`RunInferenceUseCase`, `ManageProjectUseCase`), Data Transfer Objects (DTOs), and the Dependency Injection container.
-- **`src/vision_studio/infrastructure/`**: The concrete implementations. Connects to the outside world (MongoDB, Azure Blob Storage, Ultralytics YOLO, PyTorch UNet, OpenCV Webcams, MindVision SDK).
-- **`src/vision_studio/presentation/`**: Exposes the system via a Flask REST API, WebRTC streaming endpoints, and a JWT authentication layer.
-- **`frontend/`**: A modern React SPA built with Vite, Tailwind CSS v4, and Lucide Icons. It completely replaces legacy YAML plugins with an intuitive visual editor.
+Unlike legacy hardcoded scripts, Vision Studio is a completely generic platform that can connect to any camera and execute any ML model. It is **100% configurable via a modern Web UI**.
 
 ## Key Features
 
-1. **Universal Camera Support**: Connect to USB webcams (`UVCAdapter`), IP cameras (`RTSPAdapter`), or industrial machine vision cameras (`MindVisionAdapter`).
+1. **Universal Camera Support**: Connect to USB webcams (`UVCAdapter`), IP cameras (`RTSPAdapter`), or specialized machine vision cameras (like `MindVisionAdapter`).
 2. **Pluggable ML Models**: Swap out YOLO object detection or UNet segmentation without changing the core application logic.
-3. **Dynamic Tolerances**: Define measurement pass/fail rules directly in the database or via the UI. The `MeasurementEngine` computes real-time pass/fail logic dynamically.
-4. **Active Learning (MLOps)**: The system automatically detects low-confidence inferences on the edge and pushes the raw image frames to Azure Blob Storage for human review and retraining.
-5. **Edge & Cloud Native**: Deploy to the cloud via Azure Kubernetes Service (Terraform/Helm), or deploy to the factory floor using the `docker-compose.yml` stack.
+3. **Dynamic Rule Engine**: Define logic, regions of interest, and custom rules directly in the database or via the UI.
+4. **Data Studio & MLOps**: Ingest datasets (e.g., from Kaggle), wrangle data, and automatically manage active learning. The system detects low-confidence inferences and pushes raw image frames to Blob Storage for human review and retraining.
+5. **Edge & Cloud Native**: Deploy to the cloud via Azure Kubernetes Service (Terraform/Helm), or run it locally using the `docker-compose.yml` stack.
+
+## Architecture
+
+The project is built on **Domain-Driven Design (DDD)** and Clean Architecture.
+
+- **`src/vision_studio/domain/`**: The pure-Python core. Contains Entities (`Project`, `Detection`), Value Objects, and Abstract Ports (`ICameraAdapter`, `IModelAdapter`). It has **zero dependencies** on infrastructure, ML frameworks, or APIs.
+- **`src/vision_studio/application/`**: Orchestrates the flow. Contains Use Cases (`RunInferenceUseCase`, `ManageProjectUseCase`), Data Transfer Objects (DTOs), and the Dependency Injection container.
+- **`src/vision_studio/infrastructure/`**: The concrete implementations. Connects to the outside world (MongoDB, Azure Blob Storage, Ultralytics YOLO, PyTorch UNet, OpenCV Webcams, etc.).
+- **`src/vision_studio/presentation/`**: Exposes the system via a Flask REST API, WebRTC streaming endpoints, and a JWT authentication layer.
+- **`frontend/`**: A modern React SPA built with Vite, Tailwind CSS v4, and Lucide Icons. It provides an intuitive visual editor for configuring projects, models, and data pipelines.
 
 ## Installation & Setup
 
@@ -48,7 +48,7 @@ The React UI will be available at `http://localhost:5173` (or the port specified
 
 ### 3. Edge Deployment (Docker Compose)
 
-For factory-floor deployments (IoT / Edge), start the local stack:
+For edge computing deployments or quick local evaluation, start the local stack:
 
 ```bash
 make edge-up
@@ -57,13 +57,13 @@ This will launch the Flask API, the React UI, a local MongoDB instance, and the 
 
 ## User Interface (React)
 
-The new Frontend completely eliminates the need to manually edit `plugin.yaml` files. It features:
-- **Projects Dashboard**: Manage unlimited active inspection domains.
-- **Project Details**: Configure Domain Settings, Quality Assurance Tolerances, Measurement Rules, and Camera Hardware in one place.
-- **Live Inspection Monitor**: Real-time WebRTC inference streaming with live HUD overlays, FPS metrics, and Yield/Defect shift stats.
-- **MLOps & Training Studio**: Visually inspect the Model Registry, configure Confidence Thresholds, manage Active Learning sync rules, and train/fine-tune custom YOLO or ResNet models directly from the browser!
+The Vision Studio Frontend features:
+- **Projects Dashboard**: Manage unlimited computer vision projects and domains.
+- **Project Details**: Configure Domain Settings, Rules, and Camera Hardware in one place.
+- **Live Inference Monitor**: Real-time WebRTC inference streaming with live HUD overlays, FPS metrics, and analytics.
+- **Data Studio & Training**: Visually inspect the Model Registry, configure Confidence Thresholds, ingest datasets, and train/fine-tune custom YOLO or ResNet models directly from the browser!
 - **Filter Pipeline**: Build sequential image pre-processing graphs with live before/after previews.
-- **Yield & Defect Analytics**: Live Pareto charts for QA tracking.
+- **Analytics & Telemetry**: Live charts and real-time hardware telemetry (CPU, GPU, Storage).
 
 ## Testing
 
