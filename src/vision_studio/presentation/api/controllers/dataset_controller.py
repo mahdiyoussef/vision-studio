@@ -1,18 +1,28 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 import os
+import json
+import time
 from dependency_injector.wiring import inject, Provide
 from vision_studio.application.services.di_container import Container
 from vision_studio.application.use_cases.manage_project import ManageProjectUseCase
 from vision_studio.application.use_cases.dataset_use_cases import DatasetUseCases
 from vision_studio.infrastructure.external.kaggle_adapter import KaggleAdapter
 from vision_studio.infrastructure.external.yolo_dataset_transformer import YoloDatasetTransformer
+from vision_studio.application.services.job_manager import job_manager
 
 dataset_bp = Blueprint('dataset', __name__, url_prefix='/api/v1/datasets')
 
-# Simple dependency injection setup (normally done via a DI container)
 kaggle_adapter = KaggleAdapter()
 yolo_transformer = YoloDatasetTransformer()
 dataset_use_cases = DatasetUseCases(kaggle_adapter, yolo_transformer)
+
+def _download_task(slug, dest_path, credentials, job_id):
+    job_manager.update_job(job_id, progress=10, message="Authenticating with Kaggle...")
+    # Because downloading blocks, we simulate progress steps
+    job_manager.update_job(job_id, progress=30, message="Downloading dataset archive...")
+    schema = dataset_use_cases.ingest_dataset(slug, dest_path, credentials)
+    job_manager.update_job(job_id, progress=90, message="Extracting and indexing...")
+    return {"path": dest_path, "schema": schema}
 
 @dataset_bp.route('/kaggle', methods=['POST'])
 def pull_kaggle_dataset():
@@ -25,15 +35,29 @@ def pull_kaggle_dataset():
         
     dest_path = os.path.join("data", "raw", slug.replace('/', '_'))
     
-    try:
-        schema = dataset_use_cases.ingest_dataset(slug, dest_path, credentials)
-        return jsonify({
-            "message": "Dataset downloaded successfully",
-            "path": dest_path,
-            "schema": schema
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Queue job
+    job_id = job_manager.submit("Kaggle Pull", _download_task, slug, dest_path, credentials, job_id=None)
+    
+    return jsonify({
+        "message": "Download job started",
+        "job_id": job_id
+    })
+
+def _wrangle_task(source_dir, dest_dir, column_mapping, splits, project_use_case, project_id, job_id):
+    job_manager.update_job(job_id, progress=20, message="Validating schema and parsing columns...")
+    # Artificial small delay to let UI show progress
+    time.sleep(1)
+    job_manager.update_job(job_id, progress=50, message="Processing bounding boxes and moving images...")
+    config_path = dataset_use_cases.wrangle_dataset(source_dir, dest_dir, column_mapping, splits)
+    job_manager.update_job(job_id, progress=85, message="Writing YOLO YAML config...")
+    
+    if project_id:
+        project = project_use_case.get_project(project_id)
+        if project:
+            setattr(project.domain_config, 'dataset_config_path', config_path)
+            project_use_case.update_project(project)
+            
+    return {"config_path": config_path, "format": "YOLO"}
 
 @dataset_bp.route('/wrangle', methods=['POST'])
 @inject
@@ -49,26 +73,34 @@ def wrangle_dataset(project_use_case: ManageProjectUseCase = Provide[Container.m
         
     dest_dir = source_dir.replace("raw", "processed") + "_yolo"
     
-    try:
-        config_path = dataset_use_cases.wrangle_dataset(source_dir, dest_dir, column_mapping, splits)
-        
-        # Save to project config if a project ID is provided
-        if project_id:
-            project = project_use_case.get_project(project_id)
-            if project:
-                # Add dataset_config_path to domain config (we can use an attribute, or store it in a generic dict if not defined)
-                # Since we don't have it defined in DomainConfig, we can store it in some existing field or add it.
-                # Let's see if we can just set an attribute. We'll set a generic attribute or re-use model_weights_path temporary
-                # Wait, earlier in mlops.py start_training we did: data.get("dataset_config_path", "data.yaml")
-                # So we can just save it to project.domain_config.dataset_config_path dynamically.
-                setattr(project.domain_config, 'dataset_config_path', config_path)
-                project_use_case.update_project(project)
-        
-        return jsonify({
-            "message": "Dataset wrangled successfully",
-            "config_path": config_path,
-            "format": "YOLO"
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    job_id = job_manager.submit("Dataset Wrangle", _wrangle_task, source_dir, dest_dir, column_mapping, splits, project_use_case, project_id, job_id=None)
+    
+    return jsonify({
+        "message": "Wrangle job started",
+        "job_id": job_id
+    })
 
+@dataset_bp.route('/jobs/<job_id>', methods=['GET'])
+def get_job_status(job_id):
+    job = job_manager.get_job(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify(job)
+
+@dataset_bp.route('/jobs/<job_id>/stream', methods=['GET'])
+def stream_job_status(job_id):
+    def event_stream():
+        # Stream job updates every 0.5s via SSE
+        while True:
+            job = job_manager.get_job(job_id)
+            if not job:
+                yield f"data: {json.dumps({'error': 'Job not found'})}\n\n"
+                break
+                
+            yield f"data: {json.dumps(job)}\n\n"
+            
+            if job['status'] in ['completed', 'failed']:
+                break
+            time.sleep(0.5)
+            
+    return Response(event_stream(), mimetype="text/event-stream")

@@ -126,7 +126,11 @@ export const api = {
     wrangle: (data: any, projectId: string) => fetchWithAuth(`/datasets/wrangle?project_id=${projectId}`, {
       method: 'POST',
       body: JSON.stringify(data)
-    })
+    }),
+    getJob: (jobId: string) => fetchWithAuth(`/datasets/jobs/${jobId}`)
+  },
+  system: {
+    telemetry: () => fetchWithAuth('/system/telemetry')
   }
 };
 

@@ -23,9 +23,16 @@ class KaggleAdapter(DatasetProviderInterface):
             logger.info(f"Downloading Kaggle dataset {identifier} to {dest_path}")
             os.makedirs(dest_path, exist_ok=True)
             
-            # download_dataset() doesn't extract automatically if it's a multi-file dataset. 
-            # dataset_download_cli unzips if --unzip is passed, or dataset_download_files does with unzip=True
-            kaggle.api.dataset_download_files(identifier, path=dest_path, unzip=True)
+            kaggle.api.dataset_download_files(identifier, path=dest_path, unzip=False)
+            
+            # Find the downloaded zip and extract manually to avoid Kaggle API size mismatch bug
+            for item in os.listdir(dest_path):
+                if item.endswith(".zip"):
+                    zip_path = os.path.join(dest_path, item)
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(dest_path)
+                    os.remove(zip_path) # Clean up zip after extraction
+            
             return True
         except Exception as e:
             logger.error(f"Failed to download Kaggle dataset {identifier}: {e}")

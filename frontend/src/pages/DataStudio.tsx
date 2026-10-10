@@ -39,13 +39,31 @@ export default function DataStudio() {
         slug: kaggleSlug,
         credentials: { username, key }
       }, pid);
-      if (res.schema && res.schema.columns) {
-        setAvailableColumns(res.schema.columns);
+      
+      const jobId = res.job_id;
+      if (!jobId) throw new Error("No job ID returned");
+      
+      let jobStatus = 'running';
+      while (jobStatus === 'running' || jobStatus === 'pending') {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const job = await api.datasets.getJob(jobId);
+        jobStatus = job.status;
+        toast(`Progress: ${job.progress}% - ${job.message}`, { id: 'pull-progress' });
+        
+        if (job.status === 'completed') {
+          if (job.result?.schema?.columns) {
+            setAvailableColumns(job.result.schema.columns);
+          }
+          setSourceDir(job.result?.path);
+          setDownloaded(true);
+          toast.success("Dataset downloaded successfully!", { id: 'pull-progress' });
+          break;
+        } else if (job.status === 'failed') {
+          throw new Error(job.error || "Unknown error");
+        }
       }
-      setDownloaded(true);
-      setSourceDir(res.path);
     } catch (error) {
-      alert("Failed to download dataset: " + error);
+      toast.error("Failed to download dataset: " + error, { id: 'pull-progress' });
     } finally {
       setIsDownloading(false);
     }
@@ -67,9 +85,26 @@ export default function DataStudio() {
         column_mapping: mappings,
         splits: split
       }, pid);
-      toast(`Dataset successfully wrangled and exported to YOLO format! Config path: ${res.config_path}`);
+      
+      const jobId = res.job_id;
+      if (!jobId) throw new Error("No job ID returned");
+      
+      let jobStatus = 'running';
+      while (jobStatus === 'running' || jobStatus === 'pending') {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const job = await api.datasets.getJob(jobId);
+        jobStatus = job.status;
+        toast(`Progress: ${job.progress}% - ${job.message}`, { id: 'wrangle-progress' });
+        
+        if (job.status === 'completed') {
+          toast.success(`Dataset successfully wrangled and exported to YOLO format! Config path: ${job.result.config_path}`, { id: 'wrangle-progress' });
+          break;
+        } else if (job.status === 'failed') {
+          throw new Error(job.error || "Unknown error");
+        }
+      }
     } catch (error) {
-      alert("Failed to wrangle dataset: " + error);
+      toast.error("Failed to wrangle dataset: " + error, { id: 'wrangle-progress' });
     } finally {
       setIsWrangling(false);
     }
